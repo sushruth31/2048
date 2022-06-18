@@ -83,23 +83,23 @@ function reduceLeft(arr) {
   return arr.map(el => (el > 0 ? el : null))
 }
 
+function curriedMap(f, transform) {
+  return row => f(transform ? row.map(transform) : row)
+}
+
 function moveLeft(map) {
-  let newArr = []
-  let arr = mapToArr(map)
-  console.log(reduceLeft([3, 3, 3, 3]))
-  // for (let row of arr) {
-  //   let newRow = reduceLeft(row.map(o => o.val))
-  //   newArr.push(newRow)
-  // }
-  // //change back to map
-  // let newMap = new Map()
+  //console.log(reduceLeft([3, 3, 3, 3]))
+  let newArr = mapToArr(map).map(curriedMap(reduceLeft, o => o.val))
 
-  // iterateGrid(({ r, c, key }) => {
-  //   let val = newArr[r][c]
-  //   newMap.set(key, val)
-  // })
+  //change back to map
+  let newMap = new Map()
 
-  return new Map()
+  iterateGrid(({ r, c, key }) => {
+    let val = newArr[r][c]
+    newMap.set(key, val)
+  })
+
+  return newMap
 }
 
 function moveRight(map) {
