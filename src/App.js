@@ -51,9 +51,17 @@ export default function App() {
 
   function reduceLeft(arr) {
     //[4, 4, 4, null] -> [8, 4, nil, nil]
+    function getNext(i) {
+      let attempt = arr?.[i + 1]
+      if (attempt) return attempt
+      if (i >= arr.length) return
+      return getNext(i + 1)
+    }
+
     for (let i = 0; i < arr.length; i++) {
       let cur = arr[i]
-      let next = arr?.[i + 1]
+      let next = getNext(i)
+      let nextI = arr.findIndex((_, idx) => idx === i) ?? i + i
       if (cur === next) {
         arr[i] = cur + next
         //shift left
@@ -70,7 +78,12 @@ export default function App() {
   function moveLeft() {
     let newArr = []
     let arr = mapToArr(map)
-    console.log(reduceLeft([10, 2, 2, 2]))
+    for (let row of arr) {
+      let newRow = reduceLeft(row.map(o => o.val))
+      newArr.push(newRow)
+    }
+    //assign new keys
+    console.log(reduceLeft([null, 2, null, 2]))
   }
 
   useEventListener("keydown", e => {
