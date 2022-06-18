@@ -55,64 +55,51 @@ function mapToArr(map) {
 }
 
 function reduceLeft(arr) {
-  //[4, 4, 4, null] -> [8, 4, nil, nil]
-  function getNext(i) {
-    let nextI = i + 1
-    let attempt = arr?.[nextI]
-    if (attempt) return { val: attempt, i: nextI }
-    if (i >= arr.length) return
-    return getNext(++i)
-  }
-
-  for (let i = 0; i < arr.length; i++) {
-    let cur = arr[i]
-    let next = getNext(i)
-    let nextVal = next?.val
-    let nextI = next?.i
-    if (cur === nextVal) {
-      arr[i] = cur + nextVal
-      //null the next index
-      arr[nextI] = null
-      //shift left
-      for (let j = i + 1; j < arr.length; j++) {
-        arr[j] = arr[j + 1]
-      }
-    }
-  }
-
+  //fitler nulls and move to right
+  let filteredArr = arr.filter(el => el != null)
+  let numNulls = arr.length - filteredArr.length
+  arr = [
+    ...filteredArr,
+    ...(!numNulls ? [] : Array.from(Array(numNulls)).fill(null)),
+  ]
+  //iterate comapre next val to current
   let count = 0
 
-  while (count <= NUM_COLS) {
+  while (count <= NUM_ROWS) {
     count++
-    for (let i = 1; i < arr.length; i++) {
+    for (let i = 0; i < arr.length; i++) {
       let cur = arr[i]
-      let prev = arr[i - 1]
-      if (!prev) {
-        arr[i - 1] = arr[i]
-        arr[i] = null
+      let next = arr?.[i + 1]
+      if (cur === next) {
+        arr[i] = cur * 2
+        //shift
+        for (let j = i + 2; j <= arr.length; j++) {
+          arr[j - 1] = arr[j]
+        }
       }
     }
   }
 
-  return arr.map(el => (Number(el) > 0 ? el : null))
+  return arr.map(el => (el > 0 ? el : null))
 }
 
 function moveLeft(map) {
   let newArr = []
   let arr = mapToArr(map)
-  for (let row of arr) {
-    let newRow = reduceLeft(row.map(o => o.val))
-    newArr.push(newRow)
-  }
-  //change back to map
-  let newMap = new Map()
+  console.log(reduceLeft([3, 3, 3, 3]))
+  // for (let row of arr) {
+  //   let newRow = reduceLeft(row.map(o => o.val))
+  //   newArr.push(newRow)
+  // }
+  // //change back to map
+  // let newMap = new Map()
 
-  iterateGrid(({ r, c, key }) => {
-    let val = newArr[r][c]
-    newMap.set(key, val)
-  })
+  // iterateGrid(({ r, c, key }) => {
+  //   let val = newArr[r][c]
+  //   newMap.set(key, val)
+  // })
 
-  return newMap
+  return new Map()
 }
 
 function moveRight(map) {
