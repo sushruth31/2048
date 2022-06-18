@@ -13,9 +13,17 @@ export function toArr(key) {
   return key.split("-").map(Number)
 }
 
+function iterateGrid(f) {
+  for (let i = 0; i < NUM_ROWS; i++) {
+    for (let j = 0; j < NUM_COLS; j++) {
+      f({ key: toKey([i, j]), r: i, c: j })
+    }
+  }
+}
+
 const colorMap = {
   2: "#eee4da",
-  4: "eee1c9",
+  4: "#eee1c9",
   8: "#f3b279",
   16: "#f79664",
   32: "#e7785a",
@@ -46,52 +54,80 @@ function mapToArr(map) {
   return arr
 }
 
-export default function App() {
-  let [map, setMap] = useState(() => initMap(2))
+function reduceLeft(arr) {
+  //[4, 4, 4, null] -> [8, 4, nil, nil]
+  function getNext(i) {
+    let nextI = i + 1
+    let attempt = arr?.[nextI]
+    if (attempt) return { val: attempt, i: nextI }
+    if (i >= arr.length) return
+    return getNext(++i)
+  }
 
-  function reduceLeft(arr) {
-    //[4, 4, 4, null] -> [8, 4, nil, nil]
-    function getNext(i) {
-      let attempt = arr?.[i + 1]
-      if (attempt) return attempt
-      if (i >= arr.length) return
-      return getNext(i + 1)
-    }
-
-    for (let i = 0; i < arr.length; i++) {
-      let cur = arr[i]
-      let next = getNext(i)
-      let nextI = arr.findIndex((_, idx) => idx === i) ?? i + i
-      if (cur === next) {
-        arr[i] = cur + next
-        //shift left
-        for (let j = i + 1; j < arr.length; j++) {
-          arr[j] = arr[j + 1]
-        }
+  for (let i = 0; i < arr.length; i++) {
+    let cur = arr[i]
+    let next = getNext(i)
+    let nextVal = next?.val
+    let nextI = next?.i
+    if (cur === nextVal) {
+      arr[i] = cur + nextVal
+      //null the next index
+      arr[nextI] = null
+      //shift left
+      for (let j = i + 1; j < arr.length; j++) {
+        arr[j] = arr[j + 1]
       }
     }
-    return arr.map(el => (Number(el) > 0 ? el : null))
   }
 
-  function moveRight() {}
+  let count = 0
 
-  function moveLeft() {
-    let newArr = []
-    let arr = mapToArr(map)
-    for (let row of arr) {
-      let newRow = reduceLeft(row.map(o => o.val))
-      newArr.push(newRow)
+  while (count <= NUM_COLS) {
+    count++
+    for (let i = 1; i < arr.length; i++) {
+      let cur = arr[i]
+      let prev = arr[i - 1]
+      if (!prev) {
+        arr[i - 1] = arr[i]
+        arr[i] = null
+      }
     }
-    //assign new keys
-    console.log(reduceLeft([null, 2, null, 2]))
   }
+
+  return arr.map(el => (Number(el) > 0 ? el : null))
+}
+
+function moveLeft(map) {
+  let newArr = []
+  let arr = mapToArr(map)
+  for (let row of arr) {
+    let newRow = reduceLeft(row.map(o => o.val))
+    newArr.push(newRow)
+  }
+  //change back to map
+  let newMap = new Map()
+
+  iterateGrid(({ r, c, key }) => {
+    let val = newArr[r][c]
+    newMap.set(key, val)
+  })
+
+  return newMap
+}
+
+function moveRight(map) {
+  return map
+}
+
+export default function App() {
+  let [map, setMap] = useState(() => initMap(2))
 
   useEventListener("keydown", e => {
     switch (e.key.toLowerCase()) {
       case "arrowright":
-        return moveRight()
+        return setMap(moveRight)
       case "arrowleft":
-        return moveLeft()
+        return setMap(moveLeft)
     }
   })
 
