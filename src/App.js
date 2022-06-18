@@ -33,30 +33,44 @@ function initMap(n) {
   return map.size !== n ? initMap(n) : map
 }
 
+function mapToArr(map) {
+  let arr = []
+  for (let i = 0; i < NUM_ROWS; i++) {
+    let a = []
+    for (let j = 0; j < NUM_COLS; j++) {
+      let key = toKey([i, j])
+      a.push({ key, val: map.get(key) })
+    }
+    arr.push(a)
+  }
+  return arr
+}
+
 export default function App() {
   let [map, setMap] = useState(() => initMap(2))
 
   function reduceLeft(arr) {
     //[4, 4, 4, null] -> [8, 4, nil, nil]
     for (let i = 0; i < arr.length; i++) {
-      if (arr[i] === arr?.[i + 1]) {
-        arr[i] = arr[i] + arr[i + 1]
+      let cur = arr[i]
+      let next = arr?.[i + 1]
+      if (cur === next) {
+        arr[i] = cur + next
+        //shift left
         for (let j = i + 1; j < arr.length; j++) {
           arr[j] = arr[j + 1]
         }
-        // arr[i ] = arr[i + 1]
-        // arr[i + 1] = arr[i + 2]
       }
     }
-    return arr.map(el => (Number(el) >= 0 ? el : null))
+    return arr.map(el => (Number(el) > 0 ? el : null))
   }
 
   function moveRight() {}
 
   function moveLeft() {
-    let test = [4, 4, 1, 0]
-    console.log("hi")
-    console.log(reduceLeft(test))
+    let newArr = []
+    let arr = mapToArr(map)
+    console.log(reduceLeft([10, 2, 2, 2]))
   }
 
   useEventListener("keydown", e => {
