@@ -54,14 +54,15 @@ function mapToArr(map) {
   return arr
 }
 
+function fill(n, val = null) {
+  return !n ? [] : Array.from(Array(n)).fill(val)
+}
+
 function reduceLeft(arr) {
   //fitler nulls and move to right
   let filteredArr = arr.filter(el => el != null)
   let numNulls = arr.length - filteredArr.length
-  arr = [
-    ...filteredArr,
-    ...(!numNulls ? [] : Array.from(Array(numNulls)).fill(null)),
-  ]
+  arr = [...filteredArr, ...fill(numNulls)]
   //iterate comapre next val to current
   let count = 0
 
@@ -72,7 +73,7 @@ function reduceLeft(arr) {
       let next = arr?.[i + 1]
       if (cur === next) {
         arr[i] = cur * 2
-        //shift
+        //shift left
         for (let j = i + 2; j <= arr.length; j++) {
           arr[j - 1] = arr[j]
         }
@@ -87,9 +88,9 @@ function curriedMap(f, transform) {
   return row => f(transform ? row.map(transform) : row)
 }
 
-function moveLeft(map) {
+function move(map, reduceFn) {
   //console.log(reduceLeft([3, 3, 3, 3]))
-  let newArr = mapToArr(map).map(curriedMap(reduceLeft, o => o.val))
+  let newArr = mapToArr(map).map(curriedMap(reduceFn, o => o.val))
 
   //change back to map
   let newMap = new Map()
@@ -102,19 +103,43 @@ function moveLeft(map) {
   return newMap
 }
 
-function moveRight(map) {
-  return map
+function reduceRight(arr) {
+  //filter out null move to left
+  let filteredArr = arr.filter(el => el != null),
+    count = 0
+  let numNulls = arr.length - filteredArr.length
+  arr = [...fill(numNulls), ...filteredArr]
+  //[null, 3, 3, 2] -> [null, null, 6, 2]
+  while (count <= NUM_ROWS) {
+    count++
+    for (let i = arr.length - 1; i >= 0; i--) {
+      let cur = arr[i]
+      let prev = arr?.[i - 1]
+      if (cur === prev) {
+        arr[i] = cur * 2
+        //shift left
+        for (let j = i - 2; j >= 0; j--) {
+          arr[j + 1] = arr[j]
+        }
+      }
+    }
+  }
+  return arr.map(el => (el > 0 ? el : null))
 }
 
 export default function App() {
   let [map, setMap] = useState(() => initMap(2))
 
+  function getMoveSetter(reduceFn) {
+    return setMap(map => move(map, reduceFn))
+  }
+
   useEventListener("keydown", e => {
     switch (e.key.toLowerCase()) {
       case "arrowright":
-        return setMap(moveRight)
+        return getMoveSetter(reduceRight)
       case "arrowleft":
-        return setMap(moveLeft)
+        return getMoveSetter(reduceLeft)
     }
   })
 
