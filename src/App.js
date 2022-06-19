@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useReducer, useRef, useState } from "react"
 import Grid from "./grid"
 import useEventListener from "./useEventListener"
 
@@ -58,6 +58,10 @@ function fill(n, val = null) {
   return !n ? [] : Array.from(Array(n)).fill(val)
 }
 
+function cleanWNulls(arr) {
+  return arr.map(el => (Number(el) > 0 ? el : null))
+}
+
 function reduceLeft(arr) {
   //fitler nulls and move to right
   let filteredArr = arr.filter(el => el != null)
@@ -81,7 +85,7 @@ function reduceLeft(arr) {
     }
   }
 
-  return arr.map(el => (el > 0 ? el : null))
+  return cleanWNulls(arr)
 }
 
 function curriedMap(f, transform) {
@@ -124,22 +128,47 @@ function reduceRight(arr) {
       }
     }
   }
-  return arr.map(el => (el > 0 ? el : null))
+  return cleanWNulls(arr)
 }
+
+function coinToss() {
+  return Math.random() > 0.5
+}
+
+let mapSize = map => [...map].filter(([_, v]) => v).length
 
 export default function App() {
   let [map, setMap] = useState(() => initMap(2))
+  let prevMap = useRef(map)
 
-  function getMoveSetter(reduceFn) {
-    return setMap(map => move(map, reduceFn))
+  useEffect(() => {
+    prevMap.current = map
+  }, [map])
+
+  function handleKey(reduceFn) {
+    setMap(map => {
+      let temp = move(map, reduceFn)
+      if (mapSize(temp) === mapSize(prevMap.current)) {
+        return temp
+      }
+      //get a new key
+      let newKey, newVal
+      do {
+        newVal = coinToss() ? 2 : 4
+        newKey = getRandomKey()
+        //check if this already exists
+      } while (map.get(newKey))
+      //add new key  to the temp
+      return temp.set(newKey, newVal)
+    })
   }
 
   useEventListener("keydown", e => {
     switch (e.key.toLowerCase()) {
       case "arrowright":
-        return getMoveSetter(reduceRight)
+        return handleKey(reduceRight)
       case "arrowleft":
-        return getMoveSetter(reduceLeft)
+        return handleKey(reduceLeft)
     }
   })
 
