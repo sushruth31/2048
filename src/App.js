@@ -137,6 +137,28 @@ function coinToss() {
 
 let mapSize = map => [...map].filter(([_, v]) => v).length
 
+function reduceUp(map) {
+  //let arr = mapToArr(map).map(row => row.map(o => o.val))
+  let arr = [
+    [2, 3, 1],
+    [5, 2, 1],
+    [6, 2, 1],
+  ]
+  //[0, 3], [1, 3], [2, 3] [0, 2] [1, 2] [2, 2]
+  //flip left
+  let newArr = []
+  for (let i = arr.length - 1; i >= 0; i--) {
+    let count = 0,
+      temp = []
+    while (count <= arr.length - 1) {
+      let el = arr[count][i]
+      temp.push(el)
+      count++
+    }
+    newArr.push(temp)
+  }
+}
+
 export default function App() {
   let [map, setMap] = useState(() => initMap(2))
   let prevMap = useRef(map)
@@ -144,6 +166,13 @@ export default function App() {
   useEffect(() => {
     prevMap.current = map
   }, [map])
+
+  function handleKeyVert(reduceFn) {
+    setMap(map => {
+      let tempMap = reduceFn(map)
+      return map
+    })
+  }
 
   function handleKey(reduceFn) {
     setMap(map => {
@@ -154,10 +183,10 @@ export default function App() {
       //get a new key
       let newKey, newVal
       do {
-        newVal = coinToss() ? 2 : 4
-        newKey = getRandomKey()
         //check if this already exists
-      } while (map.get(newKey))
+        newKey = getRandomKey()
+      } while (temp.get(newKey))
+      newVal = coinToss() ? 2 : 4
       //add new key  to the temp
       return temp.set(newKey, newVal)
     })
@@ -169,6 +198,10 @@ export default function App() {
         return handleKey(reduceRight)
       case "arrowleft":
         return handleKey(reduceLeft)
+      case "arrowup":
+        return handleKeyVert(reduceUp)
+      case "arrowdown":
+        return handleKeyVert(reduceUp)
     }
   })
 
