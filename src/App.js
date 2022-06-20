@@ -210,11 +210,12 @@ export default function App() {
 
   useEffect(() => {
     //compare two maps
-    map.forEach((val, key) => {
-      if (prevMap.current.get(key) !== val) {
-        setGameOver(true)
-      }
-    })
+    if (
+      areMapsEqual(map, prevMap.current) &&
+      map.size === NUM_COLS * NUM_ROWS
+    ) {
+      return setGameOver(true)
+    }
     prevMap.current = new Map(map)
   }, [map])
 
@@ -271,6 +272,7 @@ export default function App() {
       <div className="font-bold text-3xl text-neutral-600 mb-10">
         Let's Play 2048!
       </div>
+      {gameOver && <div>Game Over</div>}
       <Grid
         renderCell={({ cellKey }) => {
           let num = map.get(cellKey)
