@@ -128,8 +128,6 @@ function coinToss() {
   return Math.random() > 0.5
 }
 
-let mapSize = map => [...map].filter(([_, v]) => v).length
-
 function flipLeft(arr, orig = arr) {
   let newArr = []
   for (let i = orig.length - 1; i >= 0; i--) {
@@ -195,13 +193,38 @@ function reduceDown(map) {
   return flipLeft(newArr, arr)
 }
 
+function areMapsEqual(map1, map2) {
+  if (map1.size !== map2.size) return false
+  for (let [k, v] of map1.entries()) {
+    if (v !== map2.get(k)) {
+      return false
+    }
+  }
+  return true
+}
+
 export default function App() {
   let [map, setMap] = useState(() => initMap(2))
+  let [gameOver, setGameOver] = useState(false)
+  let prevMap = useRef(new Map(map))
+
+  useEffect(() => {
+    //compare two maps
+    map.forEach((val, key) => {
+      if (prevMap.current.get(key) !== val) {
+        setGameOver(true)
+      }
+    })
+    prevMap.current = new Map(map)
+  }, [map])
 
   function handleKeyVert(reduceFn) {
     setMap(map => {
       let arr = reduceFn(map)
       let proposedMap = arrToMap(arr)
+      if (areMapsEqual(map, proposedMap)) {
+        return proposedMap
+      }
       let [newKey, newVal] = addNewNumber(proposedMap)
       return proposedMap.set(newKey, newVal)
     })
@@ -220,10 +243,13 @@ export default function App() {
 
   function handleKey(reduceFn) {
     setMap(map => {
-      let proposed = move(map, reduceFn)
-      let [newKey, newVal] = addNewNumber(proposed)
+      let proposedMap = move(map, reduceFn)
+      if (areMapsEqual(map, proposedMap)) {
+        return proposedMap
+      }
+      let [newKey, newVal] = addNewNumber(proposedMap)
       //add new key  to the temp
-      return proposed.set(newKey, newVal)
+      return proposedMap.set(newKey, newVal)
     })
   }
 
