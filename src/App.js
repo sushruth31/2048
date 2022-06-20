@@ -138,12 +138,7 @@ function coinToss() {
 let mapSize = map => [...map].filter(([_, v]) => v).length
 
 function reduceUp(map) {
-  //let arr = mapToArr(map).map(row => row.map(o => o.val))
-  let arr = [
-    [2, 3, 1],
-    [5, 2, 1],
-    [6, 2, 1],
-  ]
+  let arr = mapToArr(map).map(row => row.map(o => o.val))
   //[0, 3], [1, 3], [2, 3] [0, 2] [1, 2] [2, 2]
   //flip left
   let newArr = []
@@ -157,6 +152,23 @@ function reduceUp(map) {
     }
     newArr.push(temp)
   }
+  //reduce left
+  newArr = newArr.map(reduceLeft)
+  //flip right
+  //[3, 0], [2, 0], [1, 0], [3, 1], [2, 1] [1, 1]
+  let final = []
+  for (let i = 0; i < arr.length; i++) {
+    let count = arr.length - 1,
+      temp = []
+    while (count >= 0) {
+      let el = newArr[count][i]
+      count--
+      temp.push(el)
+    }
+    final.push(temp)
+  }
+
+  return final
 }
 
 export default function App() {
@@ -169,26 +181,41 @@ export default function App() {
 
   function handleKeyVert(reduceFn) {
     setMap(map => {
-      let tempMap = reduceFn(map)
-      return map
+      let arr = reduceFn(map)
+      let proposedMap = new Map()
+      iterateGrid(({ r, c, key }) => {
+        let val = arr[r][c]
+        proposedMap.set(key, val)
+      })
+      if (mapSize(proposedMap) === mapSize(prevMap.current)) {
+        return proposedMap
+      }
+      let [newKey, newVal] = addNewNumber(proposedMap)
+
+      return proposedMap.set(newKey, newVal)
     })
+  }
+
+  function addNewNumber(proposed) {
+    //get a new key
+    let newKey, newVal
+    do {
+      //check if this already exists
+      newKey = getRandomKey()
+    } while (proposed.get(newKey))
+    newVal = coinToss() ? 2 : 4
+    return [newKey, newVal]
   }
 
   function handleKey(reduceFn) {
     setMap(map => {
-      let temp = move(map, reduceFn)
-      if (mapSize(temp) === mapSize(prevMap.current)) {
-        return temp
+      let proposed = move(map, reduceFn)
+      if (mapSize(proposed) === mapSize(prevMap.current)) {
+        return proposed
       }
-      //get a new key
-      let newKey, newVal
-      do {
-        //check if this already exists
-        newKey = getRandomKey()
-      } while (temp.get(newKey))
-      newVal = coinToss() ? 2 : 4
+      let [newKey, newVal] = addNewNumber(proposed)
       //add new key  to the temp
-      return temp.set(newKey, newVal)
+      return proposed.set(newKey, newVal)
     })
   }
 
