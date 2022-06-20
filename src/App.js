@@ -97,14 +97,7 @@ function move(map, reduceFn) {
   let newArr = mapToArr(map).map(curriedMap(reduceFn, o => o.val))
 
   //change back to map
-  let newMap = new Map()
-
-  iterateGrid(({ r, c, key }) => {
-    let val = newArr[r][c]
-    newMap.set(key, val)
-  })
-
-  return newMap
+  return arrToMap(newArr)
 }
 
 function reduceRight(arr) {
@@ -137,28 +130,25 @@ function coinToss() {
 
 let mapSize = map => [...map].filter(([_, v]) => v).length
 
-function reduceUp(map) {
-  let arr = mapToArr(map).map(row => row.map(o => o.val))
-  //[0, 3], [1, 3], [2, 3] [0, 2] [1, 2] [2, 2]
-  //flip left
+function flipLeft(arr, orig = arr) {
   let newArr = []
-  for (let i = arr.length - 1; i >= 0; i--) {
+  for (let i = orig.length - 1; i >= 0; i--) {
     let count = 0,
       temp = []
-    while (count <= arr.length - 1) {
+    while (count <= orig.length - 1) {
       let el = arr[count][i]
       temp.push(el)
       count++
     }
     newArr.push(temp)
   }
-  //reduce left
-  newArr = newArr.map(reduceLeft)
-  //flip right
-  //[3, 0], [2, 0], [1, 0], [3, 1], [2, 1] [1, 1]
+  return newArr
+}
+
+function flipRight(newArr, orig = newArr) {
   let final = []
-  for (let i = 0; i < arr.length; i++) {
-    let count = arr.length - 1,
+  for (let i = 0; i < orig.length; i++) {
+    let count = orig.length - 1,
       temp = []
     while (count >= 0) {
       let el = newArr[count][i]
@@ -167,31 +157,52 @@ function reduceUp(map) {
     }
     final.push(temp)
   }
-
   return final
+}
+
+function reduceUp(map) {
+  let arr = mapToArr(map).map(row => row.map(o => o.val))
+  //[0, 3], [1, 3], [2, 3] [0, 2] [1, 2] [2, 2]
+  //flip left
+  let newArr = flipLeft(arr)
+  //reduce left
+  newArr = newArr.map(reduceLeft)
+  //flip right
+  //[3, 0], [2, 0], [1, 0], [3, 1], [2, 1] [1, 1]
+  return flipRight(newArr, arr)
+}
+
+function arrToMap(arr) {
+  let map = new Map()
+  iterateGrid(({ r, c, key }) => {
+    let val = arr[r][c]
+    map.set(key, val)
+  })
+  return map
+}
+
+function reduceDown(map) {
+  let arr = mapToArr(map).map(row => row.map(o => o.val))
+
+  // -> [[6, 5, 2], [2, 2, 3], [1, 1, 1]]
+  //[3, 0], [2, 0], [1, 0] [3, 1] [2, 1] [1, 1] incerment i second
+  //flip right
+  let newArr = flipRight(arr)
+  //reduce left
+  newArr = newArr.map(reduceLeft)
+  //flip left
+  //[3, 0], [2, 0], [1, 0], [3, 1], [2, 1] [1, 1]
+  return flipLeft(newArr, arr)
 }
 
 export default function App() {
   let [map, setMap] = useState(() => initMap(2))
-  let prevMap = useRef(map)
-
-  useEffect(() => {
-    prevMap.current = map
-  }, [map])
 
   function handleKeyVert(reduceFn) {
     setMap(map => {
       let arr = reduceFn(map)
-      let proposedMap = new Map()
-      iterateGrid(({ r, c, key }) => {
-        let val = arr[r][c]
-        proposedMap.set(key, val)
-      })
-      if (mapSize(proposedMap) === mapSize(prevMap.current)) {
-        return proposedMap
-      }
+      let proposedMap = arrToMap(arr)
       let [newKey, newVal] = addNewNumber(proposedMap)
-
       return proposedMap.set(newKey, newVal)
     })
   }
@@ -210,9 +221,6 @@ export default function App() {
   function handleKey(reduceFn) {
     setMap(map => {
       let proposed = move(map, reduceFn)
-      if (mapSize(proposed) === mapSize(prevMap.current)) {
-        return proposed
-      }
       let [newKey, newVal] = addNewNumber(proposed)
       //add new key  to the temp
       return proposed.set(newKey, newVal)
@@ -228,7 +236,7 @@ export default function App() {
       case "arrowup":
         return handleKeyVert(reduceUp)
       case "arrowdown":
-        return handleKeyVert(reduceUp)
+        return handleKeyVert(reduceDown)
     }
   })
 
