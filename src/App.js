@@ -1,6 +1,7 @@
-import { useEffect, useReducer, useRef, useState } from "react"
+import { useEffect, useReducer, useRef, useState, Fragment } from "react"
 import Grid from "./grid"
 import useEventListener from "./useEventListener"
+import { AnimatePresence, motion } from "framer-motion"
 
 const NUM_ROWS = 4
 const NUM_COLS = 4
@@ -90,6 +91,10 @@ function reduceLeft(arr) {
 
 function curriedMap(f, transform) {
   return row => f(transform ? row.map(transform) : row)
+}
+
+function mapSize(map) {
+  return [...map].filter(([_, v]) => v).length
 }
 
 function move(map, reduceFn) {
@@ -212,7 +217,7 @@ export default function App() {
     //compare two maps
     if (
       areMapsEqual(map, prevMap.current) &&
-      map.size === NUM_COLS * NUM_ROWS
+      mapSize(map) === NUM_COLS * NUM_ROWS
     ) {
       return setGameOver(true)
     }
@@ -273,17 +278,33 @@ export default function App() {
         Let's Play 2048!
       </div>
       {gameOver && <div>Game Over</div>}
+
       <Grid
         renderCell={({ cellKey }) => {
           let num = map.get(cellKey)
           let backgroundColor = num && (colorMap?.[num] ?? "black")
           return (
-            <div
-              style={{ backgroundColor }}
-              className="w-full h-full flex items-center justify-center rounded-lg"
-            >
-              <div className="text-6xl text-[#6b635b] font-bold">{num}</div>
-            </div>
+            <>
+              <AnimatePresence>
+                <motion.div
+                  key={cellKey}
+                  variants={{
+                    hidden: {
+                      opacity: 0,
+                    },
+                    visible: {
+                      opacity: 1,
+                    },
+                  }}
+                  animate="visible"
+                  initial="hidden"
+                  style={{ backgroundColor }}
+                  className="w-full h-full flex items-center justify-center rounded-lg"
+                >
+                  <div className="text-6xl text-[#6b635b] font-bold">{num}</div>
+                </motion.div>
+              </AnimatePresence>
+            </>
           )
         }}
         numCols={NUM_COLS}
