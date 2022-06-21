@@ -1,4 +1,11 @@
-import { useEffect, useReducer, useRef, useState, Fragment } from "react"
+import {
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  Fragment,
+  forwardRef,
+} from "react"
 import Grid from "./grid"
 import useEventListener from "./useEventListener"
 import { AnimatePresence, motion } from "framer-motion"
@@ -212,6 +219,34 @@ export default function App() {
   let [map, setMap] = useState(() => initMap(2))
   let [gameOver, setGameOver] = useState(false)
   let prevMap = useRef(new Map(map))
+  let prevYs = useRef(new Set())
+  let prevXs = useRef(new Set())
+  let squares = [].slice.call(
+    document.getElementsByClassName(
+      "w-[140px] bg-[#ccc1b4] cursor-pointer flex items-center justify-center h-[140px] border-4 border-[#baaca0] rounded-lg"
+    )
+  )
+
+  let posGrid = useRef(new Map())
+
+  useEffect(() => {
+    if (posGrid.current.size) return
+
+    squares.forEach(sq => prevYs.current.add(sq.getBoundingClientRect().y))
+    squares.forEach(sq => prevXs.current.add(sq.getBoundingClientRect().x))
+
+    if (!prevYs.current.size) return
+
+    for (let i = 0; i < prevXs.current.size; i++) {
+      for (let j = 0; j < prevYs.current.size; j++) {
+        let x = [...prevXs.current][j]
+        let y = [...prevYs.current][i]
+        posGrid.current.set(toKey([i, j]), { x, y })
+      }
+    }
+  }, [map])
+
+  console.log(posGrid.current)
 
   useEffect(() => {
     //compare two maps
@@ -221,6 +256,7 @@ export default function App() {
     ) {
       return setGameOver(true)
     }
+    //store last x and ys
     prevMap.current = new Map(map)
   }, [map])
 
@@ -272,6 +308,12 @@ export default function App() {
     }
   })
 
+  function getLastY(key) {
+    //get previous v
+  }
+
+  function getLastX(key) {}
+
   return (
     <div className="flex items-center flex-col p-4">
       <div className="font-bold text-3xl text-neutral-600 mb-10">
@@ -280,33 +322,35 @@ export default function App() {
       {gameOver && <div>Game Over</div>}
 
       <Grid
-        renderCell={({ cellKey }) => {
+        renderCell={forwardRef(({ cellKey }, ref) => {
           let num = map.get(cellKey)
           let backgroundColor = num && (colorMap?.[num] ?? "black")
           return (
-            <>
-              <AnimatePresence>
-                <motion.div
-                  key={cellKey}
-                  variants={{
-                    hidden: {
-                      opacity: 0,
-                    },
-                    visible: {
-                      opacity: 1,
-                    },
-                  }}
-                  animate="visible"
-                  initial="hidden"
-                  style={{ backgroundColor }}
-                  className="w-full h-full flex items-center justify-center rounded-lg"
-                >
-                  <div className="text-6xl text-[#6b635b] font-bold">{num}</div>
-                </motion.div>
-              </AnimatePresence>
-            </>
+            <AnimatePresence>
+              <motion.div
+                key={cellKey}
+                variants={{
+                  hidden: {
+                    opacity: 0,
+                    y: getLastY(cellKey),
+                    x: getLastX(cellKey),
+                  },
+                  visible: {
+                    opacity: 1,
+                    y: 0,
+                    x: 0,
+                  },
+                }}
+                animate="visible"
+                initial="hidden"
+                style={{ backgroundColor }}
+                className="w-full h-full flex items-center justify-center rounded-lg"
+              >
+                <div className="text-6xl text-[#6b635b] font-bold">{num}</div>
+              </motion.div>
+            </AnimatePresence>
           )
-        }}
+        })}
         numCols={NUM_COLS}
         numRows={NUM_ROWS}
       />
